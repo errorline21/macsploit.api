@@ -34,6 +34,11 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! command -v curl >/dev/null 2>&1; then
+    echo "Error: curl is required."
+    exit 1
+fi
+
 mkdir -p "$INSTALL_DIR"
 chmod 700 "$INSTALL_DIR"
 
@@ -41,17 +46,14 @@ TEMP_FILE="$(mktemp)"
 trap 'rm -f "$TEMP_FILE"' EXIT
 
 echo
-echo "Downloading agent..."
+echo "Downloading agent.py..."
 
-if ! curl --fail --silent --show-error \
+curl --fail --silent --show-error \
     "$REPO_BASE/agent.py" \
-    -o "$TEMP_FILE"; then
-    echo "Error: Could not download agent.py."
-    exit 1
-fi
+    -o "$TEMP_FILE"
 
 if ! grep -q 'def main():' "$TEMP_FILE"; then
-    echo "Error: Downloaded agent.py did not pass validation."
+    echo "Error: Downloaded agent.py failed validation."
     exit 1
 fi
 
@@ -59,14 +61,14 @@ install -m 600 "$TEMP_FILE" "$INSTALL_DIR/agent.py"
 
 echo
 echo "Installation completed successfully."
-echo "Agent location: $INSTALL_DIR/agent.py"
+printf 'Agent location: %s/agent.py\n' "$INSTALL_DIR"
 printf 'Python version: '
 python3 --version
 
 echo
-echo "To check the agent, run:"
+echo "Test the agent with:"
 printf 'python3 "%s/agent.py" status\n' "$INSTALL_DIR"
 
 echo
-echo "Remote access is not enabled."
+echo "Remote access is disabled."
 echo "No background service was started."
